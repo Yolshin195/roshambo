@@ -1,3 +1,114 @@
+const Status = {
+    INACTIVE: '"INACTIVE"',
+    FIND_GAME: '"FIND_GAME"',
+    WAIT_START_GAME: '"WAIT_START_GAME"',
+    READY: '"READY"',
+    GAME: '"GAME"',
+    DRAW: '"DRAW"',
+    FAIL: '"FAIL"',
+    WIN: '"WIN"',
+
+    isInactive(status) {
+        return status === this.INACTIVE;
+    },
+
+    isFindGame(status) {
+        return status === this.FIND_GAME;
+    },
+
+    isGameEnd(status) {
+        return (status === this.WIN || status === this.DRAW || status === this.FAIL);
+    },
+
+    isGame(status) {
+        return status === this.GAME;
+    },
+
+    isWaitStartGame(status) {
+        return status === this.WAIT_START_GAME;
+    }
+}
+
+class Api {
+    constructor(name) {
+        this.name = name;
+    }
+
+    setInactive() {
+        return fetch(`/game/set/inactive?name=${this.name}`)
+        .then(response => response.text())
+    }
+
+    getStatus() {
+        return fetch(`/game/status?name=${this.name}`)
+        .then(response => response.text())
+    }
+
+    getResult() {
+        return fetch(`/game/result?name=${this.name}`)
+        .then(response => response.json())
+    }
+
+    startGame() {
+        return fetch(`/game/start?name=${this.name}`)
+        .then(response => response.text())
+    }
+
+    findGame() {
+        return fetch(`/game/findGame?name=${this.name}`)
+        .then(response => response.responseStatus)
+    }
+
+    makeChoice(choice) {
+        return fetch(`/game/makeChoice?name=${this.name}&choice=${choice}`)
+        .then(response => response.text())
+    }
+}
+
+class Controller {
+    constructor() {
+
+    }
+}
+
+class GameGraph {
+    constructor() {
+        this.status = Status.INACTIVE;
+    }
+
+    step(status) {
+        switch(status) {
+            case Status.INACTIVE: {
+                break;
+            }
+            case Status.FIND_GAME: {
+                break;
+            }
+            case Status.WAIT_START_GAME: {
+                break;
+            }
+            case Status.READY: {
+                break;
+            }
+            case Status.GAME: {
+                break;
+            }
+            case Status.WIN: {
+                break;
+            }
+            case Status.FAIL: {
+                break;
+            }
+            case Status.DRAW: {
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+}
+
 class Game {
     constructor() {
         this._status = null;
@@ -12,8 +123,9 @@ class Game {
     set status(status) {
         document.getElementById("status").innerHTML = status;
 
-        if (this.result === null && (status === '"WIN"' || status === '"DRAW"' || status === '"FAIL"')) {
-            this.setResult()
+        if (this.result === null && Status.isGameEnd(status)) {
+            this.active = false;
+            this.setResult();
         }
 
         this._status = status;
@@ -61,7 +173,7 @@ class Game {
 
     onSelect(choice) {
         console.log(choice);
-        if (this._status !== '"GAME"') return;
+        if (!Status.isGame(this._status)) return;
 
         fetch(`/game/makeChoice?name=${this.name}&choice=${choice}`)
         .then(response => response.text())
@@ -69,7 +181,7 @@ class Game {
     }
 
     onStartGame() {
-        if (this._status !== '"WAIT_START_GAME"') return;
+        if (!Status.isWaitStartGame(this._status)) return;
 
         fetch(`/game/start?name=${this.name}`)
         .then(response => response.text())
