@@ -1,0 +1,55 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.w1 {
+    border: solid 2px black;
+    width: 500px;
+    margin: auto;
+    margin-top: 3rem;
+    cursor: pointer;
+}
+
+.w1 img {
+    width: 100%;
+}
+
+.selected {
+    display: flex;
+    justify-content: center;
+}
+
+.selected-item {
+    width: 10rem;
+    vertical-align: middle;
+}
+
+.selected-item img {
+    width: 100%;
+}
+
+.skill-board {
+    position: absolute;
+    bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: auto;
+}
+
+.skill-board-item {
+    width: 10rem;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.skill-board-item:hover {
+    border: 1px solid black;
+    margin: 1px;
+}
+
+.skill-board-item img {
+    user-select: none;
+    width: 100%;
+}
