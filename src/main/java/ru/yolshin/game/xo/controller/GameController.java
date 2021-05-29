@@ -2,6 +2,8 @@ package ru.yolshin.game.xo.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,7 +30,10 @@ public class GameController {
     }
 
     @GetMapping("/findGame")
-    public void findGame(@RequestParam String name) {
+    public void findGame() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
         logger.info(name);
         User user = userService.get(name);
         Status status = user.getStatus();
@@ -42,13 +47,18 @@ public class GameController {
     }
 
     @GetMapping("/status")
-    public Status getStatus(@RequestParam String name) {
+    public Status getStatus() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
         return userService.getStatus(name);
     }
 
     @GetMapping("/makeChoice")
-    public void makeChoice(@RequestParam String name, @RequestParam int choice) {
+    public void makeChoice(@RequestParam int choice) {
         logger.info(Integer.toString(choice));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
         Game game = userService.getGame(name);
         logger.info(game.toString());
         game.setUserSelected(userService.get(name), choice);
@@ -59,7 +69,10 @@ public class GameController {
     }
 
     @GetMapping("/start")
-    public void startGame(@RequestParam String name) {
+    public void startGame() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
         User user = userService.get(name);
         user.setStatus(Status.READY);
         Game game = user.getGame();
@@ -71,7 +84,10 @@ public class GameController {
     }
 
     @GetMapping("/result")
-    public int[] getResult(@RequestParam String name) {
+    public int[] getResult() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
         User user = userService.get(name);
         return user.getGame().getResult(user);
     }
