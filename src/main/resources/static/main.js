@@ -31,177 +31,137 @@ const Status = {
 
 class Api {
     constructor(name) {
-        this.name = name;
+        this.name = "";
     }
 
     setInactive() {
-        return fetch(`/game/set/inactive?name=${this.name}`)
+        return fetch(`/game/set/inactive`)
         .then(response => response.text())
     }
 
     getStatus() {
-        return fetch(`/game/status?name=${this.name}`)
+        return fetch(`/game/status`)
         .then(response => response.text())
     }
 
     getResult() {
-        return fetch(`/game/result?name=${this.name}`)
+        return fetch(`/game/result`)
         .then(response => response.json())
     }
 
     startGame() {
-        return fetch(`/game/start?name=${this.name}`)
+        return fetch(`/game/start`)
         .then(response => response.text())
     }
 
     findGame() {
-        return fetch(`/game/findGame?name=${this.name}`)
+        return fetch(`/game/findGame`)
         .then(response => response.responseStatus)
     }
 
     makeChoice(choice) {
-        return fetch(`/game/makeChoice?name=${this.name}&choice=${choice}`)
+        return fetch(`/game/makeChoice?choice=${choice}`)
         .then(response => response.text())
-    }
-}
-
-class Controller {
-    constructor() {
-
-    }
-}
-
-class GameGraph {
-    constructor() {
-        this.status = Status.INACTIVE;
-    }
-
-    step(status) {
-        switch(status) {
-            case Status.INACTIVE: {
-                break;
-            }
-            case Status.FIND_GAME: {
-                break;
-            }
-            case Status.WAIT_START_GAME: {
-                break;
-            }
-            case Status.READY: {
-                break;
-            }
-            case Status.GAME: {
-                break;
-            }
-            case Status.WIN: {
-                break;
-            }
-            case Status.FAIL: {
-                break;
-            }
-            case Status.DRAW: {
-                break;
-            }
-            default: {
-                break;
-            }
-        }
     }
 }
 
 class Game {
-    constructor() {
-        this._status = null;
-        this.active = true;
-        this.result = null;
+    constructor(api) {
+        this.api = api;
+        this.status = Status.INACTIVE;
 
-        this.findGame();
-        this.updateStatus();
+        this.init();
+    }
+
+    init() {
+        document.getElementById("findGame").addEventListener('click', this.onFindGame.bind(this));
+        document.getElementById("startGame").addEventListener('click', this.onStartGame.bind(this));
         this.initController();
     }
-
-    set status(status) {
-        document.getElementById("status").innerHTML = status;
-
-        if (this.result === null && Status.isGameEnd(status)) {
-            this.active = false;
-            this.setResult();
-        }
-
-        this._status = status;
-    }
-
-    get name() {
-        return document.getElementById("name").value;
-    }
-
-
-    updateStatus() {
-        let name = this.name;
-        if (name === "" && this.active) return setTimeout(() => this.updateStatus(), 5000);
-
-        fetch(`/game/status?name=${name}`)
-        .then(response => response.text())
-        .then(status => {
-            this.status = status;
-            if (this.active)
-                setTimeout(() => this.updateStatus(), 1500);
-        });
-    }
-
-    findGame() {
-        let findGame = document.getElementById("findGame");
-
-        findGame.addEventListener('click', () => {
-            fetch(`/game/findGame?name=${this.name}`)
-              .then(response => response.responseStatus)
-              .then(data => console.log(data));
-        })
-    }
-
+    
     initController() {
         var rock = document.getElementById("rock");
         var scissors = document.getElementById("scissors");
         var paper = document.getElementById("paper");
         var start = document.getElementById("window");
         
-        rock.addEventListener('click', () => this.onSelect(1));
-        scissors.addEventListener('click', () => this.onSelect(2));
-        paper.addEventListener('click', () => this.onSelect(3));
+        rock.addEventListener('click', () => this.onMakeChoice(1));
+        scissors.addEventListener('click', () => this.onMakeChoice(2));
+        paper.addEventListener('click', () => this.onMakeChoice(3));
         start.addEventListener('click', () => this.onStartGame());
     }
 
-    onSelect(choice) {
-        console.log(choice);
-        if (!Status.isGame(this._status)) return;
+    onFindGame() {
+        console.log('findGame: ', this.api);
+        console.log('findGame: ', this.api.findGame);
+        let updateStatus = () => {
+            this.updateStatus()
+            .then(() => {
+                if (!Status.isWaitStartGame(this.status)) {
+                    setTimeout(() => updateStatus(), 1000);
+                }
+            })
+        }
 
-        fetch(`/game/makeChoice?name=${this.name}&choice=${choice}`)
-        .then(response => response.text())
-        .then(console.log)
+        this.setWindowsResult('img/select.jpg');
+
+        this.api.findGame()
+        .then(() => updateStatus());
     }
 
     onStartGame() {
-        if (!Status.isWaitStartGame(this._status)) return;
+        console.log('Game.startGame: ', this);
+        let updateStatus = () => {
+            this.updateStatus()
+            .then(() => {
+                if (!Status.isGame(this.status)) {
+                    setTimeout(() => updateStatus(), 1000);
+                }
+            })
+        }
 
-        fetch(`/game/start?name=${this.name}`)
-        .then(response => response.text())
-        .then(console.log)
+        this.api.startGame()
+        .then(() => updateStatus());
     }
 
-    setResult() {
-        fetch(`/game/result?name=${this.name}`)
-        .then(response => response.json())
-        .then(result => {
-            this.result = result
-            this.setWindows(`img/${result[0]}_${result[1]}.png`)
-        });
+    onMakeChoice(choice) {
+        console.log('Game.onMakeChoice: ', this);
+        let updateStatus = () => {
+            this.updateStatus()
+            .then(() => {
+                if (!Status.isGameEnd(this.status)) {
+                    setTimeout(() => updateStatus(), 1000);
+                } else {
+                    console.log('Game.onMakeChoice: GameEnd!');
+                    this.api.getResult()
+                    .then(result => {
+                        this.setWindowsResult(`img/${result[0]}_${result[1]}.png`);
+                    })
+                }
+            })
+        }
+
+        this.api.makeChoice(choice)
+        .then(() => updateStatus());
     }
 
-    setWindows(src) {
+    updateStatus() {
+        console.log('Game.updateStatus: ', this);
+        return this.api.getStatus()
+        .then(status => this.status = status)
+        .then(() => this.setWindowsStatus())
+    }
+
+    setWindowsStatus() {
+        document.getElementById("status").innerHTML = this.status;
+    }
+
+    setWindowsResult(src) {
         document.getElementById('window').innerHTML = `<img src="${src}">`
     }
 }
 
 window.addEventListener("load", function() {
-    new Game();
+    var api = new Api();
+    new Game(api);
 });
